@@ -1,0 +1,140 @@
+:root {
+  --md-border-color: #e0e0e0;
+  --md-surface: #f8f8f8;
+  --md-code-bg: #fdfdfd;
+  --md-radius: 12px;
+  --md-muted-color: #555;
+  --md-code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.md-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.md-table__head-cell,
+.md-table__cell {
+  padding: 0.6rem 0.75rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.md-align-left {
+  text-align: left;
+}
+
+.md-align-center {
+  text-align: center;
+}
+
+.md-align-right {
+  text-align: right;
+}
+
+.md-codeblock {
+  margin: 1rem 0;
+  border: 1px solid var(--md-border-color, #e0e0e0);
+  border-radius: var(--md-radius, 12px);
+  overflow: hidden;
+  background: #fff;
+}
+
+.md-codeblock__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--md-surface, #f8f8f8);
+  border-bottom: 1px solid var(--md-border-color, #e0e0e0);
+}
+
+.md-codeblock__lang {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.md-codeblock__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--md-border-color, #e0e0e0);
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+}
+
+.md-codeblock__copy:hover {
+  background: #f3f3f3;
+}
+
+.md-codeblock__copy:active {
+  transform: translateY(1px);
+}
+
+.md-icon {
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.md-codeblock__pre {
+  margin: 0;
+  padding: 0.75rem;
+  border: 0;
+  overflow: auto;
+  max-width: 100%;
+  background: var(--md-code-bg, #fdfdfd);
+}
+
+.md-codeblock__code {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-family: var(--md-code-font);
+  font-size: 0.95em;
+}
+
+.md-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.md-link--external {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.md-link__tooltip {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  background: #111;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.md-link--external:hover .md-link__tooltip,
+.md-link--external:focus-visible .md-link__tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
