@@ -94,7 +94,7 @@ export function markdownToHTML(text) {
       const lines = blockquoteBlock
         .split(/\n/)
         .map((line) => line.replace(/^[ \t]*>\s*/, '').trim())
-        .join('\n');
+        .join('<br />');
       return `${lead}<blockquote class="md-blockquote">${lines}</blockquote>`;
     }
   );
@@ -179,7 +179,7 @@ export function markdownToHTML(text) {
     return '';
   };
 
-  html = html.replace(/$begin:math:display$\(\[\^$end:math:display$]+?)\]$begin:math:text$\(\[\^\)\]\+\?\)$end:math:text$/g, (_, label, href) => {
+  html = html.replace(/\[([^\]]+?)\]\(([^)]+?)\)/g, (_, label, href) => {
     const url = safeLink(href);
     const tooltip = escapeHtml(href || '');
     if (!url) return label;
@@ -188,28 +188,66 @@ export function markdownToHTML(text) {
     )}" target="_blank" rel="noreferrer noopener"><span class="md-link__label">${label}</span> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="md-icon md-icon-external"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg><span class="md-link__tooltip">${tooltip}</span></a>`;
   });
 
-  // 6) Convert line-breaks to <br> for NON-code content
-  html = html.replace(/\n/g, '<br>');
+  // 6) Convert line-breaks to HTML paragraphs and <br /> inside paragraphs
+  const linesWithHtml = html.split("\n");
+  const htmlLines = [];
+  let paragraph = [];
+  let emptyCount = 0;
+  let seenContent = false;
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    htmlLines.push(`<p class="md-paragraph">${paragraph.join("<br />")}</p>`);
+    paragraph = [];
+    seenContent = true;
+  };
+  const pushExtraBreaks = () => {
+    if (!seenContent) {
+      emptyCount = 0;
+      return;
+    }
+    const extraBreaks = Math.max(0, emptyCount - 1);
+    for (let j = 0; j < extraBreaks; j += 1) {
+      htmlLines.push("<br />");
+    }
+    emptyCount = 0;
+  };
 
-  // 6.1) Collapse 3+ consecutive <br> into a double-break
-  html = html.replace(/(?:<br>[\s]*){3,}/g, '<br><br>');
-
-  // 6.2) Normalize spacing around block elements
-  html = html
-    .replace(
-      /(<br>\s*)+(<(?:h[1-4]|hr|table|ul|ol|blockquote)\b[^>]*>)/g,
-      '<br>$2'
-    )
-    .replace(
-      /(<\/(?:h[1-4]|table|ul|ol|blockquote)>\s*)(<br>\s*)+/g,
-      '$1<br>'
+  const isBlockLine = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    if (/^@@CODEBLOCK\d+@@$/.test(trimmed)) return true;
+    if (!trimmed.startsWith("<")) return false;
+    return /^(<h[1-4]\b|<hr\b|<table\b|<ul\b|<ol\b|<blockquote\b|<div class="md-codeblock"\b|<\/(?:h[1-4]|table|ul|ol|blockquote)>)/.test(
+      trimmed
     );
+  };
 
-  // 6.3) Trim breaks after headings
-  html = html.replace(/(<\/h[1-4]>)(<br>\s*)+/g, '$1');
+  for (let i = 0; i < linesWithHtml.length; i += 1) {
+    const line = linesWithHtml[i] ?? "";
+    if (line.trim().length === 0) {
+      if (paragraph.length > 0) {
+        flushParagraph();
+      }
+      emptyCount += 1;
+      continue;
+    }
+    if (isBlockLine(line)) {
+      if (paragraph.length > 0) {
+        flushParagraph();
+      }
+      pushExtraBreaks();
+      htmlLines.push(line);
+      seenContent = true;
+      continue;
+    }
+    if (emptyCount > 0) {
+      pushExtraBreaks();
+    }
+    paragraph.push(line);
+  }
 
-  // 6.4) Trim trailing breaks after lists
-  html = html.replace(/(<\/(?:ul|ol)>)(<br>\s*)+/g, '$1');
+  flushParagraph();
+  html = htmlLines.join("");
 
   // 7) Restore code blocks with header + copy button
   html = html.replace(/@@CODEBLOCK(\d+)@@/g, (_, idx) => {
@@ -229,14 +267,6 @@ export function markdownToHTML(text) {
 
     return `<div class="md-codeblock">${head}${body}</div>`;
   });
-
-  // 8) Cleanup around codeblocks
-  html = html
-    .replace(/<br>\s*(?=<div class="md-codeblock"\b)/g, '')
-    .replace(
-      /(<div class="md-codeblock"[^>]*>[\s\S]*?<\/div>)\s*<br>/g,
-      '$1'
-    );
 
   return html;
 }
